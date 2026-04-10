@@ -1,0 +1,12 @@
+.git
+.gitignore
+.vscode
+docs
+spec.md
+README.md
+*.md
+src/**/*.ts
+tsconfig.json
+node_modules
+out/**/*.map
+out/**/*.d.ts

@@ -1,0 +1,74 @@
+{
+  "name": "auto-project-theme",
+  "displayName": "Auto Project Theme",
+  "description": "Automatically assign random color themes to new projects",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Auto Project Theme",
+      "properties": {
+        "autoProjectTheme.autoTriggerOnWindowOpen": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically assign a theme when a folder is opened"
+        },
+        "autoProjectTheme.writeToProjectSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save the selected theme to the project's .vscode/settings.json"
+        },
+        "autoProjectTheme.missingSettingsBehavior": {
+          "type": "string",
+          "enum": [
+            "create",
+            "temporary",
+            "skip",
+            "ask"
+          ],
+          "default": "ask",
+          "description": "What to do if .vscode/settings.json doesn't exist: create, temporary, skip, or ask"
+        },
+        "autoProjectTheme.includedColorThemes": {
+          "type": "array",
+          "default": [],
+          "description": "List of light color themes to randomly select from"
+        },
+        "autoProjectTheme.includedDarkColorThemes": {
+          "type": "array",
+          "default": [],
+          "description": "List of dark color themes to randomly select from"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "autoProjectTheme.addCurrentTheme",
+        "title": "Add current theme to AutoProjectTheme light/dark list"
+      },
+      {
+        "command": "autoProjectTheme.selectNewTheme",
+        "title": "Select a different random theme for this project"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.0.0"
+  }
+}
