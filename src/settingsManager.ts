@@ -1,8 +1,14 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SelectedThemes } from './types';
 
 export class SettingsManager {
+  // Previous workspace-level values, captured before applying new themes
+  private static previousColorTheme: string | undefined;
+  private static previousLightTheme: string | undefined;
+  private static previousDarkTheme: string | undefined;
+
   static async getProjectSettingsPath(workspaceFolder: vscode.WorkspaceFolder): Promise<string> {
     return path.join(workspaceFolder.uri.fsPath, '.vscode', 'settings.json');
   }
@@ -27,57 +33,61 @@ export class SettingsManager {
 
   static async hasThemeSet(workspaceFolder: vscode.WorkspaceFolder): Promise<boolean> {
     const settings = await SettingsManager.getProjectSettings(workspaceFolder);
-    return settings['workbench.colorTheme'] !== undefined;
+    return settings['workbench.colorTheme'] !== undefined
+      || settings['workbench.preferredLightColorTheme'] !== undefined
+      || settings['workbench.preferredDarkColorTheme'] !== undefined;
   }
 
-  static async writeThemeToProject(
-    workspaceFolder: vscode.WorkspaceFolder,
-    themeName: string,
-    isDark?: boolean
+  /**
+   * Ensure .vscode/settings.json exists on disk so that VS Code's
+   * ConfigurationTarget.Workspace API can write to it without creating
+   * an unsaved editor buffer.
+   */
+  private static async ensureSettingsFileExists(
+    workspaceFolder: vscode.WorkspaceFolder
   ): Promise<void> {
     const settingsPath = await SettingsManager.getProjectSettingsPath(workspaceFolder);
     const vscodeDir = path.dirname(settingsPath);
 
-    // Ensure .vscode directory exists
     if (!fs.existsSync(vscodeDir)) {
       fs.mkdirSync(vscodeDir, { recursive: true });
     }
 
-    const settings = await SettingsManager.getProjectSettings(workspaceFolder);
-    const key = isDark !== undefined
-      ? (isDark ? 'workbench.colorTheme' : 'workbench.colorTheme')
-      : 'workbench.colorTheme';
-
-    settings[key] = themeName;
-
-    try {
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
-    } catch (error) {
-      throw new Error(`Failed to write theme to settings: ${error}`);
+    if (!fs.existsSync(settingsPath)) {
+      fs.writeFileSync(settingsPath, '{}', 'utf-8');
     }
   }
 
-  static async applyThemeTemporarily(themeName: string): Promise<void> {
-    try {
-      await vscode.commands.executeCommand('workbench.action.selectTheme');
-      await vscode.workspace
-        .getConfiguration('workbench')
-        .update('colorTheme', themeName, vscode.ConfigurationTarget.Global);
-    } catch (error) {
-      throw new Error(`Failed to apply theme: ${error}`);
-    }
-  }
-
-  static async applyThemeToWorkspace(
+  /**
+   * Apply themes to workspace settings (scoped to this window only).
+   * Creates .vscode/settings.json first if needed to avoid unsaved buffer issues.
+   */
+  static async applyThemesToWorkspace(
     workspaceFolder: vscode.WorkspaceFolder,
-    themeName: string
+    themes: SelectedThemes
   ): Promise<void> {
-    // Apply globally first so user sees it immediately
-    await vscode.workspace
-      .getConfiguration('workbench')
-      .update('colorTheme', themeName, vscode.ConfigurationTarget.Global);
+    await SettingsManager.ensureSettingsFileExists(workspaceFolder);
 
-    // Then save to project settings
-    await SettingsManager.writeThemeToProject(workspaceFolder, themeName);
+    // Snapshot current workspace-level values before overwriting
+    const settings = await SettingsManager.getProjectSettings(workspaceFolder);
+    SettingsManager.previousColorTheme = settings['workbench.colorTheme'];
+    SettingsManager.previousLightTheme = settings['workbench.preferredLightColorTheme'];
+    SettingsManager.previousDarkTheme = settings['workbench.preferredDarkColorTheme'];
+
+    const workbench = vscode.workspace.getConfiguration('workbench');
+    await workbench.update('colorTheme', themes.light, vscode.ConfigurationTarget.Workspace);
+    await workbench.update('preferredLightColorTheme', themes.light, vscode.ConfigurationTarget.Workspace);
+    await workbench.update('preferredDarkColorTheme', themes.dark, vscode.ConfigurationTarget.Workspace);
+  }
+
+  /**
+   * Restore previous workspace theme values. If a value was undefined
+   * before we changed it, it gets removed from workspace settings.
+   */
+  static async revertThemes(): Promise<void> {
+    const workbench = vscode.workspace.getConfiguration('workbench');
+    await workbench.update('colorTheme', SettingsManager.previousColorTheme, vscode.ConfigurationTarget.Workspace);
+    await workbench.update('preferredLightColorTheme', SettingsManager.previousLightTheme, vscode.ConfigurationTarget.Workspace);
+    await workbench.update('preferredDarkColorTheme', SettingsManager.previousDarkTheme, vscode.ConfigurationTarget.Workspace);
   }
 }

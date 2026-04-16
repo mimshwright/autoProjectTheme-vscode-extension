@@ -7,34 +7,19 @@ export class ConfigResolver {
 
     return {
       autoTriggerOnWindowOpen: config.get('autoTriggerOnWindowOpen', true),
-      writeToProjectSettings: config.get('writeToProjectSettings', true),
-      missingSettingsBehavior: config.get(
-        'missingSettingsBehavior',
-        'ask'
-      ) as ExtensionConfig['missingSettingsBehavior'],
-      includedColorThemes: config.get('includedColorThemes', []),
-      includedDarkColorThemes: config.get('includedDarkColorThemes', []),
+      randomThemePool: config.get('randomThemePool', []),
+      useAllInstalledThemes: config.get('useAllInstalledThemes', false),
     };
   }
 
-  static async updateIncludedColorThemes(
-    themes: string[],
-    isDark: boolean
-  ): Promise<void> {
+  static async updateRandomThemePool(themes: string[]): Promise<void> {
     const config = vscode.workspace.getConfiguration('autoProjectTheme');
-    const key = isDark ? 'includedDarkColorThemes' : 'includedColorThemes';
-    await config.update(key, themes, vscode.ConfigurationTarget.Global);
+    await config.update('randomThemePool', themes, vscode.ConfigurationTarget.Global);
   }
 
-  static async removeThemeFromConfig(
-    themeName: string,
-    isDark: boolean
-  ): Promise<void> {
+  static async removeThemeFromConfig(themeName: string): Promise<void> {
     const config = ConfigResolver.getConfig();
-    const key = isDark ? 'includedDarkColorThemes' : 'includedColorThemes';
-    const list = isDark ? config.includedDarkColorThemes : config.includedColorThemes;
-
-    const filtered = list.filter((t) => t !== themeName);
-    await ConfigResolver.updateIncludedColorThemes(filtered, isDark);
+    const filtered = config.randomThemePool.filter((t) => t !== themeName);
+    await ConfigResolver.updateRandomThemePool(filtered);
   }
 }

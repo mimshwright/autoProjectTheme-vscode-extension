@@ -10,17 +10,6 @@ export class ThemeManager {
       return ThemeManager.cachedThemes;
     }
 
-    // Query VSCode for all color themes
-    const themesList = await vscode.commands.executeCommand(
-      'workbench.action.showSettings',
-      'workbench.colorTheme'
-    ) as any;
-
-    // Fallback: manually extract from available themes via VSCode API
-    // We'll poll the list by checking what VSCode knows about
-    const themes: ThemeInfo[] = [];
-
-    // Get a list of installed themes by checking the extension data
     const allExtensions = vscode.extensions.all;
     const themeContributions = new Map<string, ThemeInfo>();
 
@@ -28,58 +17,50 @@ export class ThemeManager {
       const packageJSON = ext.packageJSON;
       if (packageJSON.contributes?.themes) {
         for (const theme of packageJSON.contributes.themes) {
-          themeContributions.set(theme.id, {
-            id: theme.id,
-            label: theme.label,
-            uiTheme: theme.uiTheme,
-          });
+          // Theme id may be missing; use label as the identifier
+          const id = theme.id || theme.label;
+          if (id) {
+            themeContributions.set(id, {
+              id,
+              label: theme.label || id,
+              uiTheme: theme.uiTheme,
+            });
+          }
         }
       }
     }
 
     ThemeManager.cachedThemes = Array.from(themeContributions.values());
+    console.log(`Auto Project Theme: found ${ThemeManager.cachedThemes.length} installed themes`);
     return ThemeManager.cachedThemes;
   }
 
-  static async selectRandomTheme(): Promise<SelectedThemes> {
+  /**
+   * Returns null if there are no themes to pick from (empty list and
+   * useAllInstalledThemes is false).
+   */
+  static async selectRandomTheme(): Promise<SelectedThemes | null> {
     const config = ConfigResolver.getConfig();
     const allThemes = await ThemeManager.getAllInstalledThemes();
-    const autoDetectColorScheme =
-      vscode.workspace.getConfiguration('window').get('autoDetectColorScheme') === true;
 
-    if (autoDetectColorScheme) {
-      return ThemeManager.selectLightDarkPair(config, allThemes);
-    } else {
-      const theme = ThemeManager.pickRandomTheme(
-        config.includedColorThemes,
-        allThemes
-      );
-      return { single: theme };
+    // If useAllInstalledThemes is off and pool is empty, prompt the user
+    if (!config.useAllInstalledThemes && config.randomThemePool.length === 0) {
+      return null;
     }
-  }
 
-  private static selectLightDarkPair(
-    config: any,
-    allThemes: ThemeInfo[]
-  ): SelectedThemes {
-    const lightTheme = ThemeManager.pickRandomTheme(
-      config.includedColorThemes,
-      allThemes.filter((t) => !t.uiTheme || t.uiTheme === 'vs')
-    );
+    // When useAllInstalledThemes is on, ignore the pool and pick from everything
+    const preferred = config.useAllInstalledThemes ? [] : config.randomThemePool;
+    const lightThemes = allThemes.filter((t) => !t.uiTheme || t.uiTheme === 'vs');
+    const lightTheme = ThemeManager.pickRandomTheme(preferred, lightThemes);
 
-    const darkTheme = ThemeManager.pickRandomTheme(
-      config.includedDarkColorThemes,
-      allThemes.filter((t) => t.uiTheme === 'vs-dark')
-    );
-
-    // Try to find matching pair by name heuristic
+    // Try name matching first, then fall back to random dark
     const pairedDark = ThemeManager.findMatchingDarkTheme(lightTheme, allThemes);
-    const pairedLight = ThemeManager.findMatchingLightTheme(darkTheme, allThemes);
+    const darkThemes = allThemes.filter((t) => t.uiTheme === 'vs-dark');
+    const darkTheme = pairedDark || ThemeManager.pickRandomTheme(preferred, darkThemes);
 
-    return {
-      light: pairedDark ? lightTheme : lightTheme,
-      dark: pairedDark || darkTheme,
-    };
+    console.log(`Auto Project Theme: paired light="${lightTheme}" dark="${darkTheme}"${pairedDark ? ' (matched by name)' : ''}`);
+
+    return { light: lightTheme, dark: darkTheme };
   }
 
   private static pickRandomTheme(
@@ -87,54 +68,49 @@ export class ThemeManager {
     availableThemes: ThemeInfo[]
   ): string {
     if (preferredList.length > 0) {
-      // Filter available to match preferred list
       const filtered = availableThemes.filter((t) =>
         preferredList.includes(t.id) || preferredList.includes(t.label)
       );
       if (filtered.length > 0) {
-        const random = Math.floor(Math.random() * filtered.length);
-        return filtered[random].id;
+        return filtered[Math.floor(Math.random() * filtered.length)].id;
       }
     }
 
-    // Fallback: pick any available theme
+    // Use all available themes (only reached when useAllInstalledThemes is on)
     if (availableThemes.length > 0) {
-      const random = Math.floor(Math.random() * availableThemes.length);
-      return availableThemes[random].id;
+      return availableThemes[Math.floor(Math.random() * availableThemes.length)].id;
     }
 
-    // Last resort: return a known theme name
     return 'Default Dark Modern';
+  }
+
+  /**
+   * Normalize a theme name for pairing by stripping "light"/"dark" and
+   * collapsing whitespace. e.g. "Solarized Light" and "Solarized Dark"
+   * both normalize to "solarized".
+   */
+  private static normalizeForPairing(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/\b(light|dark)\b/gi, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
   }
 
   private static findMatchingDarkTheme(
     lightThemeName: string,
     allThemes: ThemeInfo[]
   ): string | null {
-    // Try prefix matching: "Monokai" -> "Monokai Dark", "Monokai Pro Dark", etc.
-    const prefix = lightThemeName.split(' ')[0];
+    const normalizedLight = ThemeManager.normalizeForPairing(lightThemeName);
+    if (!normalizedLight) {
+      return null;
+    }
+
     const candidates = allThemes.filter(
       (t) =>
         t.uiTheme === 'vs-dark' &&
-        (t.label.includes(prefix) || t.id.includes(prefix.toLowerCase()))
-    );
-
-    if (candidates.length > 0) {
-      return candidates[0].id;
-    }
-
-    return null;
-  }
-
-  private static findMatchingLightTheme(
-    darkThemeName: string,
-    allThemes: ThemeInfo[]
-  ): string | null {
-    const prefix = darkThemeName.split(' ')[0];
-    const candidates = allThemes.filter(
-      (t) =>
-        (!t.uiTheme || t.uiTheme === 'vs') &&
-        (t.label.includes(prefix) || t.id.includes(prefix.toLowerCase()))
+        ThemeManager.normalizeForPairing(t.label) === normalizedLight
     );
 
     if (candidates.length > 0) {
