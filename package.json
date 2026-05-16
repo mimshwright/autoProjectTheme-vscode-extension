@@ -10,7 +10,7 @@
   "categories": [
     "Themes", "Other"
   ],
-  "icon":"",
+  "icon":"./assets/icon.png",
   "galleryBanner":"",
   "repository": "https://github.com/mimshwright/autoProjectTheme-vscode-extension",
   "main": "./out/extension.js",
