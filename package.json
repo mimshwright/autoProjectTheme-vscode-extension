@@ -1,18 +1,24 @@
 {
   "name": "auto-project-theme",
   "displayName": "Auto Project Theme",
-  "description": "Automatically assign random color themes to new projects",
+  "description": "Automatically assigns random color themes to new projects",
   "version": "1.0.0",
+  "publisher": "mimswright",
   "engines": {
-    "vscode": "^1.84.0"
+    "vscode": "^1.75.0"
   },
   "categories": [
-    "Themes"
+    "Themes", "Other"
   ],
+  "icon":"",
+  "galleryBanner":"",
+  "repository": "https://github.com/mimshwright/autoProjectTheme-vscode-extension",
+  "main": "./out/extension.js",
+  "license":"MIT",
+  "keywords":["theme", "random", "switcher", "customization"],
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./out/extension.js",
   "contributes": {
     "configuration": {
       "title": "Auto Project Theme",
