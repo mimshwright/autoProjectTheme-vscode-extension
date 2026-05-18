@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import { ThemeInfo, SelectedThemes } from './types';
-import { ConfigResolver } from './configResolver';
+import * as vscode from "vscode";
+import { ThemeInfo, SelectedThemes } from "./types";
+import { ConfigResolver } from "./configResolver";
 
 export class ThemeManager {
   private static cachedThemes: ThemeInfo[] | null = null;
@@ -31,7 +31,9 @@ export class ThemeManager {
     }
 
     ThemeManager.cachedThemes = Array.from(themeContributions.values());
-    console.log(`Auto Project Theme: found ${ThemeManager.cachedThemes.length} installed themes`);
+    console.log(
+      `Auto Project Theme: found ${ThemeManager.cachedThemes.length} installed themes`,
+    );
     return ThemeManager.cachedThemes;
   }
 
@@ -49,27 +51,37 @@ export class ThemeManager {
     }
 
     // When useAllInstalledThemes is on, ignore the pool and pick from everything
-    const preferred = config.useAllInstalledThemes ? [] : config.randomThemePool;
-    const lightThemes = allThemes.filter((t) => !t.uiTheme || t.uiTheme === 'vs');
+    const preferred = config.useAllInstalledThemes
+      ? []
+      : config.randomThemePool;
+    const lightThemes = allThemes.filter(
+      (t) => !t.uiTheme || t.uiTheme === "vs",
+    );
     const lightTheme = ThemeManager.pickRandomTheme(preferred, lightThemes);
 
     // Try name matching first, then fall back to random dark
-    const pairedDark = ThemeManager.findMatchingDarkTheme(lightTheme, allThemes);
-    const darkThemes = allThemes.filter((t) => t.uiTheme === 'vs-dark');
-    const darkTheme = pairedDark || ThemeManager.pickRandomTheme(preferred, darkThemes);
+    const pairedDark = ThemeManager.findMatchingDarkTheme(
+      lightTheme,
+      allThemes,
+    );
+    const darkThemes = allThemes.filter((t) => t.uiTheme === "vs-dark");
+    const darkTheme =
+      pairedDark || ThemeManager.pickRandomTheme(preferred, darkThemes);
 
-    console.log(`Auto Project Theme: paired light="${lightTheme}" dark="${darkTheme}"${pairedDark ? ' (matched by name)' : ''}`);
+    console.log(
+      `Auto Project Theme: paired light="${lightTheme}" dark="${darkTheme}"${pairedDark ? " (matched by name)" : ""}`,
+    );
 
     return { light: lightTheme, dark: darkTheme };
   }
 
   private static pickRandomTheme(
     preferredList: string[],
-    availableThemes: ThemeInfo[]
+    availableThemes: ThemeInfo[],
   ): string {
     if (preferredList.length > 0) {
-      const filtered = availableThemes.filter((t) =>
-        preferredList.includes(t.id) || preferredList.includes(t.label)
+      const filtered = availableThemes.filter(
+        (t) => preferredList.includes(t.id) || preferredList.includes(t.label),
       );
       if (filtered.length > 0) {
         return filtered[Math.floor(Math.random() * filtered.length)].id;
@@ -78,10 +90,11 @@ export class ThemeManager {
 
     // Use all available themes (only reached when useAllInstalledThemes is on)
     if (availableThemes.length > 0) {
-      return availableThemes[Math.floor(Math.random() * availableThemes.length)].id;
+      return availableThemes[Math.floor(Math.random() * availableThemes.length)]
+        .id;
     }
 
-    return 'Default Dark Modern';
+    return "Default Dark Modern";
   }
 
   /**
@@ -92,15 +105,15 @@ export class ThemeManager {
   private static normalizeForPairing(name: string): string {
     return name
       .toLowerCase()
-      .replace(/\b(light|dark)\b/gi, '')
-      .replace(/[^a-z0-9]+/g, ' ')
+      .replace(/\b(light|dark)\b/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
       .trim()
-      .replace(/\s+/g, ' ');
+      .replace(/\s+/g, " ");
   }
 
   private static findMatchingDarkTheme(
     lightThemeName: string,
-    allThemes: ThemeInfo[]
+    allThemes: ThemeInfo[],
   ): string | null {
     const normalizedLight = ThemeManager.normalizeForPairing(lightThemeName);
     if (!normalizedLight) {
@@ -109,8 +122,8 @@ export class ThemeManager {
 
     const candidates = allThemes.filter(
       (t) =>
-        t.uiTheme === 'vs-dark' &&
-        ThemeManager.normalizeForPairing(t.label) === normalizedLight
+        t.uiTheme === "vs-dark" &&
+        ThemeManager.normalizeForPairing(t.label) === normalizedLight,
     );
 
     if (candidates.length > 0) {

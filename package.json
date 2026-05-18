@@ -8,14 +8,20 @@
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Themes", "Other"
+    "Themes",
+    "Other"
   ],
-  "icon":"./assets/icon.png",
-  "galleryBanner":"",
+  "icon": "./assets/icon.png",
+  "galleryBanner": "",
   "repository": "https://github.com/mimshwright/autoProjectTheme-vscode-extension",
   "main": "./out/extension.js",
-  "license":"MIT",
-  "keywords":["theme", "random", "switcher", "customization"],
+  "license": "MIT",
+  "keywords": [
+    "theme",
+    "random",
+    "switcher",
+    "customization"
+  ],
   "activationEvents": [
     "onStartupFinished"
   ],
@@ -64,5 +70,8 @@
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.84.0",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "prettier": "^3.8.3"
   }
 }

@@ -1,7 +1,7 @@
 export interface ThemeInfo {
   id: string;
   label: string;
-  uiTheme?: 'vs' | 'vs-dark' | 'hc-black' | 'hc-light';
+  uiTheme?: "vs" | "vs-dark" | "hc-black" | "hc-light";
 }
 
 export interface SelectedThemes {
