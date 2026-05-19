@@ -3,7 +3,7 @@
   "displayName": "Auto Project Theme",
   "description": "Automatically assigns random color themes to new projects",
   "version": "1.0.0",
-  "publisher": "mimswright",
+  "publisher": "mimshwright",
   "engines": {
     "vscode": "^1.120.0"
   },
