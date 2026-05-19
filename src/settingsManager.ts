@@ -5,7 +5,6 @@ import { SelectedThemes } from "./types";
 
 export class SettingsManager {
   // Previous workspace-level values, captured before applying new themes
-  private static previousColorTheme: string | undefined;
   private static previousLightTheme: string | undefined;
   private static previousDarkTheme: string | undefined;
 
@@ -78,18 +77,14 @@ export class SettingsManager {
 
     // Snapshot current workspace-level values before overwriting
     const settings = await SettingsManager.getProjectSettings(workspaceFolder);
-    SettingsManager.previousColorTheme = settings["workbench.colorTheme"];
     SettingsManager.previousLightTheme =
       settings["workbench.preferredLightColorTheme"];
     SettingsManager.previousDarkTheme =
       settings["workbench.preferredDarkColorTheme"];
 
+    // Only write the preferred keys — writing colorTheme to workspace suppresses
+    // the OS auto-switcher and forces a single theme regardless of appearance
     const workbench = vscode.workspace.getConfiguration("workbench");
-    await workbench.update(
-      "colorTheme",
-      themes.light,
-      vscode.ConfigurationTarget.Workspace,
-    );
     await workbench.update(
       "preferredLightColorTheme",
       themes.light,
@@ -108,11 +103,6 @@ export class SettingsManager {
    */
   static async revertThemes(): Promise<void> {
     const workbench = vscode.workspace.getConfiguration("workbench");
-    await workbench.update(
-      "colorTheme",
-      SettingsManager.previousColorTheme,
-      vscode.ConfigurationTarget.Workspace,
-    );
     await workbench.update(
       "preferredLightColorTheme",
       SettingsManager.previousLightTheme,

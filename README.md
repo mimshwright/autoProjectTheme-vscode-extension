@@ -2,6 +2,8 @@
 
 Automatically assigns a random color theme to each project so your VS Code windows are visually distinct.
 
+_Notice, this extension was vibe coded. Use at your own risk._
+
 ## How it works
 
 - When you open a folder that doesn't have a theme set in `.vscode/settings.json`, the extension picks a random light/dark theme pair and applies it

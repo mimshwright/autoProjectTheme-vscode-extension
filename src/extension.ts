@@ -13,7 +13,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       "autoProjectTheme.addCurrentTheme",
-      addCurrentTheme,
+      addThemesToPool,
     ),
     vscode.commands.registerCommand(
       "autoProjectTheme.selectNewTheme",
@@ -140,31 +140,44 @@ async function showThemeConfirmationDialog(
   return (result?.value as "save" | "different" | "cancel") || "cancel";
 }
 
-async function addCurrentTheme(): Promise<void> {
-  const currentTheme = vscode.workspace
-    .getConfiguration("workbench")
-    .get("colorTheme") as string;
+async function addThemesToPool(): Promise<void> {
+  const allThemes = await ThemeManager.getAllInstalledThemes();
+  const currentPool =
+    vscode.workspace
+      .getConfiguration("autoProjectTheme")
+      .inspect<string[]>("randomThemePool")?.globalValue ?? [];
 
-  if (!currentTheme) {
-    vscode.window.showWarningMessage("No color theme is currently active");
+  const items = allThemes
+    .slice()
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((t) => ({
+      label: t.label,
+      description:
+        t.uiTheme === "vs"
+          ? "light"
+          : t.uiTheme === "vs-dark"
+            ? "dark"
+            : "high contrast",
+      picked: currentPool.includes(t.id) || currentPool.includes(t.label),
+    }));
+
+  const selected = await vscode.window.showQuickPick(items, {
+    canPickMany: true,
+    placeHolder: "Select themes to include in the random pool",
+  });
+
+  if (!selected) {
     return;
   }
 
-  const config = ConfigResolver.getConfig();
-  const list = config.randomThemePool;
+  const selectedLabels = selected.map((s) => s.label);
+  const newPool = allThemes
+    .filter((t) => selectedLabels.includes(t.label))
+    .map((t) => t.id);
 
-  if (list.includes(currentTheme)) {
-    vscode.window.showInformationMessage(
-      `"${currentTheme}" is already in the random theme pool`,
-    );
-    return;
-  }
-
-  list.push(currentTheme);
-  await ConfigResolver.updateRandomThemePool(list);
-
+  await ConfigResolver.updateRandomThemePool(newPool);
   vscode.window.showInformationMessage(
-    `Added "${currentTheme}" to random theme pool`,
+    `Random theme pool updated with ${newPool.length} theme${newPool.length === 1 ? "" : "s"}`,
   );
 }
 
