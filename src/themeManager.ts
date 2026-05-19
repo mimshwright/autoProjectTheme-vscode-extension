@@ -132,8 +132,4 @@ export class ThemeManager {
 
     return null;
   }
-
-  static clearCache(): void {
-    ThemeManager.cachedThemes = null;
-  }
 }

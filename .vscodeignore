@@ -3,8 +3,6 @@
 .vscode
 docs
 spec.md
-README.md
-*.md
 src/**/*.ts
 tsconfig.json
 node_modules
@@ -12,6 +10,5 @@ pnpm-lock.yaml
 pnpm-workspace.yaml
 .pnpm-store
 *.vsix
-spec.md
 out/**/*.map
 out/**/*.d.ts

@@ -20,10 +20,4 @@ export class ConfigResolver {
       vscode.ConfigurationTarget.Global,
     );
   }
-
-  static async removeThemeFromConfig(themeName: string): Promise<void> {
-    const config = ConfigResolver.getConfig();
-    const filtered = config.randomThemePool.filter((t) => t !== themeName);
-    await ConfigResolver.updateRandomThemePool(filtered);
-  }
 }

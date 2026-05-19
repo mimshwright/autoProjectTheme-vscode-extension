@@ -13,7 +13,7 @@ _Notice, this extension was vibe coded. Use at your own risk._
 
 ## Commands
 
-- **AutoProjectTheme: Add current theme to pool** - adds whatever theme you're using to the random theme pool
+- **AutoProjectTheme: Edit theme pool** - opens a multi-select picker to choose which installed themes to include in your random pool
 - **AutoProjectTheme: Select a different random theme for this project** - picks a new random theme and shows the confirmation dialog
 - **AutoProjectTheme: Toggle use all installed themes** - toggles between using the curated pool or all installed themes
 

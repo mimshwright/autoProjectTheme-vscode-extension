@@ -15,7 +15,3 @@ export interface ExtensionConfig {
   useAllInstalledThemes: boolean;
 }
 
-export interface ThemeValidationResult {
-  valid: boolean;
-  invalidThemes: string[];
-}
